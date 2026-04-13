@@ -56,7 +56,7 @@
       gap: 12px;
       margin-top: 18px;
     }
-    button, select, a.action-link {
+    button, select, input, a.action-link {
       width: 100%;
       min-height: 52px;
       border-radius: 14px;
@@ -93,7 +93,7 @@
       font-size: 14px;
       text-align: left;
     }
-    select {
+    select, input {
       padding: 0 14px;
       background: #fff;
       margin: 8px 0 8px;
@@ -199,6 +199,36 @@
 
       <!-- STEP 3 -->
       <section id="step3" class="step">
+        <h2>Booking ID check</h2>
+        <p class="muted">Please enter your Booking ID first.</p>
+
+        <h3>Enter Booking ID</h3>
+        <input type="text" id="bookingIdInput" placeholder="Enter Booking ID" />
+
+        <div id="bookingIdErrorBox" class="error-box hidden"></div>
+        <div id="bookingIdInfoBox" class="info-box hidden"></div>
+
+        <button class="primary" onclick="checkBookingId()">Check Booking ID</button>
+      </section>
+
+      <!-- STEP 4 -->
+      <section id="step4" class="step">
+        <h2>Select your name</h2>
+        <p class="muted">Booking ID found. Please select your name.</p>
+
+        <h3>Select your name</h3>
+        <select id="bookingNameSelect">
+          <option value="">-- Select your name --</option>
+        </select>
+
+        <div id="bookingNameErrorBox" class="error-box hidden"></div>
+        <div id="bookingNameInfoBox" class="info-box hidden"></div>
+
+        <button class="primary" onclick="verifyBookingName()">Verify Name</button>
+      </section>
+
+      <!-- STEP 5 -->
+      <section id="step5" class="step">
         <h2>Guest verification</h2>
         <p class="muted">Please select your information below.</p>
 
@@ -223,8 +253,8 @@
         <button class="primary" onclick="verifyGuest()">Verify</button>
       </section>
 
-      <!-- STEP 4 -->
-      <section id="step4" class="step">
+      <!-- STEP 6 -->
+      <section id="step6" class="step">
         <h2>Verification complete</h2>
         <p>Your information has been matched successfully.</p>
 
@@ -236,8 +266,8 @@
         <button class="secondary" style="margin-top:16px;" onclick="resetAll()">Start over</button>
       </section>
 
-      <!-- STEP 5 -->
-      <section id="step5" class="step">
+      <!-- STEP 7 -->
+      <section id="step7" class="step">
         <h2>Verification limit reached</h2>
         <p>We could not verify your reservation after 10 attempts.</p>
 
@@ -263,24 +293,32 @@
 
     let attemptsLeft = 10;
     let optionsLoaded = false;
+    let currentBookingId = "";
 
     function goToStep(stepNumber) {
       document.querySelectorAll(".step").forEach(el => el.classList.remove("active"));
       document.getElementById("step" + stepNumber).classList.add("active");
 
       const backBtn = document.getElementById("backBtn");
-      if (stepNumber === 1 || stepNumber === 4 || stepNumber === 5) {
+      if (stepNumber === 1 || stepNumber === 6 || stepNumber === 7) {
         backBtn.classList.add("hidden");
       } else {
         backBtn.classList.remove("hidden");
       }
 
       updateAttemptBadge();
-      hideError();
-      hideInfo();
+      hideAllMessages();
     }
 
     function goBack() {
+      if (document.getElementById("step5").classList.contains("active")) {
+        goToStep(2);
+        return;
+      }
+      if (document.getElementById("step4").classList.contains("active")) {
+        goToStep(3);
+        return;
+      }
       if (document.getElementById("step3").classList.contains("active")) {
         goToStep(2);
         return;
@@ -302,37 +340,10 @@
       document.getElementById("alreadyStayingInfo").classList.remove("hidden");
     }
 
-    function showError(message) {
-      const box = document.getElementById("errorBox");
-      box.textContent = message;
-      box.classList.remove("hidden");
-    }
-
-    function hideError() {
-      const box = document.getElementById("errorBox");
-      box.textContent = "";
-      box.classList.add("hidden");
-    }
-
-    function showInfo(message) {
-      const box = document.getElementById("infoBox");
-      box.textContent = message;
-      box.classList.remove("hidden");
-    }
-
-    function hideInfo() {
-      const box = document.getElementById("infoBox");
-      box.textContent = "";
-      box.classList.add("hidden");
-    }
-
     function setLoading(isLoading) {
       const card = document.getElementById("card");
-      if (isLoading) {
-        card.classList.add("loading");
-      } else {
-        card.classList.remove("loading");
-      }
+      if (isLoading) card.classList.add("loading");
+      else card.classList.remove("loading");
     }
 
     function fillSelect(selectId, items, placeholder) {
@@ -352,20 +363,150 @@
       });
     }
 
-    async function startCheckInToday() {
+    function showBox(id, message) {
+      const box = document.getElementById(id);
+      box.textContent = message;
+      box.classList.remove("hidden");
+    }
+
+    function hideBox(id) {
+      const box = document.getElementById(id);
+      if (!box) return;
+      box.textContent = "";
+      box.classList.add("hidden");
+    }
+
+    function hideAllMessages() {
+      [
+        "bookingIdErrorBox",
+        "bookingIdInfoBox",
+        "bookingNameErrorBox",
+        "bookingNameInfoBox",
+        "errorBox",
+        "infoBox"
+      ].forEach(hideBox);
+    }
+
+    function decreaseAttemptOrLock() {
+      attemptsLeft -= 1;
+      updateAttemptBadge();
+
+      if (attemptsLeft <= 0) {
+        goToStep(7);
+        return true;
+      }
+      return false;
+    }
+
+    function startCheckInToday() {
+      document.getElementById("bookingIdInput").value = "";
+      document.getElementById("bookingNameSelect").innerHTML = '<option value="">-- Select your name --</option>';
+      currentBookingId = "";
       goToStep(3);
+    }
+
+    async function checkBookingId() {
+      const bookingId = document.getElementById("bookingIdInput").value.trim();
+
+      hideAllMessages();
+
+      if (!bookingId) {
+        showBox("bookingIdErrorBox", "Please enter your Booking ID.");
+        return;
+      }
+
+      setLoading(true);
+      showBox("bookingIdInfoBox", "Checking Booking ID...");
+
+      try {
+        const url = API_URL + "?action=checkBookingId&bookId=" + encodeURIComponent(bookingId);
+        const response = await fetch(url);
+        const data = await response.json();
+
+        hideBox("bookingIdInfoBox");
+
+        if (!data.success) {
+          const locked = decreaseAttemptOrLock();
+          if (locked) return;
+
+          showBox("bookingIdErrorBox", "Booking ID could not be verified. Moving to guest verification.");
+          setTimeout(async () => {
+            await startFallbackVerification();
+          }, 900);
+          return;
+        }
+
+        currentBookingId = bookingId;
+        fillSelect("bookingNameSelect", data.names || [], "-- Select your name --");
+        goToStep(4);
+      } catch (error) {
+        hideBox("bookingIdInfoBox");
+        showBox("bookingIdErrorBox", "Could not connect to the server.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function verifyBookingName() {
+      const name = document.getElementById("bookingNameSelect").value;
+
+      hideAllMessages();
+
+      if (!name) {
+        showBox("bookingNameErrorBox", "Please select your name.");
+        return;
+      }
+
+      setLoading(true);
+      showBox("bookingNameInfoBox", "Verifying your name...");
+
+      try {
+        const url =
+          API_URL +
+          "?action=verifyBookingName" +
+          "&bookId=" + encodeURIComponent(currentBookingId) +
+          "&name=" + encodeURIComponent(name);
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        hideBox("bookingNameInfoBox");
+
+        if (!data.success) {
+          const locked = decreaseAttemptOrLock();
+          if (locked) return;
+
+          showBox("bookingNameErrorBox", "The selected name does not match this Booking ID.");
+          return;
+        }
+
+        document.getElementById("roomNumber").textContent = data.roomNumber || "";
+        document.getElementById("doorPassword").textContent = data.doorPassword || "";
+        goToStep(6);
+      } catch (error) {
+        hideBox("bookingNameInfoBox");
+        showBox("bookingNameErrorBox", "Could not connect to the server.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function startFallbackVerification() {
+      goToStep(5);
 
       if (optionsLoaded) return;
 
       setLoading(true);
-      showInfo("Loading guest list...");
+      showBox("infoBox", "Loading guest list...");
 
       try {
         const response = await fetch(API_URL + "?action=getOptions");
         const data = await response.json();
 
+        hideBox("infoBox");
+
         if (!data.success) {
-          showError("Failed to load guest options.");
+          showBox("errorBox", "Failed to load guest options.");
           return;
         }
 
@@ -374,9 +515,9 @@
         fillSelect("checkoutSelect", data.checkouts || [], "-- Select check-out date --");
 
         optionsLoaded = true;
-        hideInfo();
       } catch (error) {
-        showError("Could not connect to the server.");
+        hideBox("infoBox");
+        showBox("errorBox", "Could not connect to the server.");
       } finally {
         setLoading(false);
       }
@@ -387,26 +528,23 @@
       const checkin = document.getElementById("checkinSelect").value;
       const checkout = document.getElementById("checkoutSelect").value;
 
-      hideError();
-      hideInfo();
+      hideAllMessages();
 
       if (!name) {
-        showError("Please select your name.");
+        showBox("errorBox", "Please select your name.");
         return;
       }
-
       if (!checkin) {
-        showError("Please select your check-in date.");
+        showBox("errorBox", "Please select your check-in date.");
         return;
       }
-
       if (!checkout) {
-        showError("Please select your check-out date.");
+        showBox("errorBox", "Please select your check-out date.");
         return;
       }
 
       setLoading(true);
-      showInfo("Verifying your information...");
+      showBox("infoBox", "Verifying your information...");
 
       try {
         const url =
@@ -419,27 +557,22 @@
         const response = await fetch(url);
         const data = await response.json();
 
-        hideInfo();
+        hideBox("infoBox");
 
         if (!data.success) {
-          attemptsLeft -= 1;
-          updateAttemptBadge();
+          const locked = decreaseAttemptOrLock();
+          if (locked) return;
 
-          if (attemptsLeft <= 0) {
-            goToStep(5);
-            return;
-          }
-
-          showError("The information does not match our records. Please try again.");
+          showBox("errorBox", "The information does not match our records. Please try again.");
           return;
         }
 
         document.getElementById("roomNumber").textContent = data.roomNumber || "";
         document.getElementById("doorPassword").textContent = data.doorPassword || "";
-        goToStep(4);
+        goToStep(6);
       } catch (error) {
-        hideInfo();
-        showError("Could not connect to the server.");
+        hideBox("infoBox");
+        showBox("errorBox", "Could not connect to the server.");
       } finally {
         setLoading(false);
       }
@@ -448,10 +581,13 @@
     function resetAll() {
       attemptsLeft = 10;
       optionsLoaded = false;
+      currentBookingId = "";
 
       document.getElementById("bookingInfo").classList.add("hidden");
       document.getElementById("alreadyStayingInfo").classList.add("hidden");
 
+      document.getElementById("bookingIdInput").value = "";
+      document.getElementById("bookingNameSelect").innerHTML = '<option value="">-- Select your name --</option>';
       document.getElementById("nameSelect").innerHTML = '<option value="">-- Select your name --</option>';
       document.getElementById("checkinSelect").innerHTML = '<option value="">-- Select check-in date --</option>';
       document.getElementById("checkoutSelect").innerHTML = '<option value="">-- Select check-out date --</option>';
@@ -459,8 +595,7 @@
       document.getElementById("roomNumber").textContent = "";
       document.getElementById("doorPassword").textContent = "";
 
-      hideError();
-      hideInfo();
+      hideAllMessages();
       goToStep(1);
     }
 
