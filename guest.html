@@ -1,136 +1,470 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guest Verification</title>
-
-<style>
-body {
-  font-family: Arial;
-  background:#f5f5f5;
-  padding:20px;
-}
-.container {
-  max-width:400px;
-  margin:auto;
-  background:white;
-  padding:20px;
-  border-radius:10px;
-}
-button {
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  font-size:16px;
-}
-select {
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-}
-.hidden { display:none; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guest Verification</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f6f7f9;
+      color: #222;
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 17px;
+    }
+    p {
+      margin: 0 0 14px;
+      color: #555;
+    }
+    .muted {
+      color: #777;
+      font-size: 14px;
+    }
+    .step {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+    .step.active {
+      display: block;
+    }
+    .btn-group {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    button, select, a.action-link {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 14px;
+      border: 1px solid #d8dce2;
+      font-size: 16px;
+    }
+    button {
+      background: #fff;
+      cursor: pointer;
+      padding: 14px 16px;
+      text-align: left;
+      transition: 0.15s ease;
+    }
+    button:hover {
+      border-color: #222;
+      transform: translateY(-1px);
+    }
+    button.primary {
+      background: #222;
+      color: #fff;
+      text-align: center;
+      border-color: #222;
+    }
+    button.secondary {
+      text-align: center;
+    }
+    button.linkish {
+      border: none;
+      background: none;
+      width: auto;
+      min-height: auto;
+      padding: 0;
+      color: #666;
+      font-size: 14px;
+      text-align: left;
+    }
+    select {
+      padding: 0 14px;
+      background: #fff;
+      margin: 8px 0 8px;
+    }
+    .result-box {
+      background: #f2f8f2;
+      border: 1px solid #cfe6cf;
+      padding: 16px;
+      border-radius: 14px;
+      margin-top: 18px;
+    }
+    .error-box {
+      background: #fff4f4;
+      border: 1px solid #efcaca;
+      padding: 14px;
+      border-radius: 14px;
+      margin: 14px 0;
+      color: #a23b3b;
+    }
+    .info-box {
+      background: #f6f8fb;
+      border: 1px solid #dde4ee;
+      padding: 14px;
+      border-radius: 14px;
+      margin: 14px 0;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .badge {
+      font-size: 13px;
+      background: #eef1f5;
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: #555;
+      white-space: nowrap;
+    }
+    .hidden {
+      display: none !important;
+    }
+    a.action-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      background: #222;
+      color: white;
+      margin-top: 10px;
+    }
+    .small {
+      font-size: 13px;
+      color: #777;
+    }
+    .loading {
+      opacity: 0.65;
+      pointer-events: none;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="card" id="card">
+      <div class="topbar">
+        <button id="backBtn" class="linkish hidden" onclick="goBack()">← Back</button>
+        <div class="badge" id="attemptBadge">Attempts left: 10</div>
+      </div>
 
-<div class="container">
+      <!-- STEP 1 -->
+      <section id="step1" class="step active">
+        <h1>Please select below</h1>
+        <p>Are you our guest?</p>
+        <div class="btn-group">
+          <button onclick="goToStep(2)">Yes, I am a guest</button>
+          <button onclick="showBookingInfo()">No, but I want to book.</button>
+        </div>
+        <div id="bookingInfo" class="info-box hidden">
+          <strong>Booking information</strong>
+          <p class="small">Please proceed to our booking page or contact us directly.</p>
+          <a class="action-link" href="https://your-booking-link.com" target="_blank" rel="noopener">Go to booking page</a>
+        </div>
+      </section>
 
-<h2>Are you our guest?</h2>
+      <!-- STEP 2 -->
+      <section id="step2" class="step">
+        <h2>Please choose one option</h2>
+        <div class="btn-group">
+          <button onclick="startCheckInToday()">I'm checking in today.</button>
+          <button onclick="showAlreadyStayingInfo()">I'm staying in already.</button>
+        </div>
+        <div id="alreadyStayingInfo" class="info-box hidden">
+          <strong>Already staying?</strong>
+          <p class="small">This button is not connected yet. For now, please contact staff if you already checked in.</p>
+        </div>
+      </section>
 
-<div id="step1">
-  <button onclick="goStep2()">Yes, I am a guest</button>
-  <button>No, but I want to book</button>
-</div>
+      <!-- STEP 3 -->
+      <section id="step3" class="step">
+        <h2>Guest verification</h2>
+        <p class="muted">Please select your information below.</p>
 
-<div id="step2" class="hidden">
-  <button onclick="startCheckin()">I'm checking in today</button>
-  <button>I'm staying in already</button>
-</div>
+        <h3>Select your name</h3>
+        <select id="nameSelect">
+          <option value="">-- Select your name --</option>
+        </select>
 
-<div id="step3" class="hidden">
-  <h3>Select your name</h3>
-  <select id="name"></select>
+        <h3>Select check-in date</h3>
+        <select id="checkinSelect">
+          <option value="">-- Select check-in date --</option>
+        </select>
 
-  <h3>Select check-in</h3>
-  <select id="checkin"></select>
+        <h3>Select check-out date</h3>
+        <select id="checkoutSelect">
+          <option value="">-- Select check-out date --</option>
+        </select>
 
-  <h3>Select check-out</h3>
-  <select id="checkout"></select>
+        <div id="errorBox" class="error-box hidden"></div>
+        <div id="infoBox" class="info-box hidden"></div>
 
-  <button onclick="verify()">Verify</button>
-</div>
+        <button class="primary" onclick="verifyGuest()">Verify</button>
+      </section>
 
-<div id="result" class="hidden">
-  <h3>Success</h3>
-  <p id="room"></p>
-  <p id="pw"></p>
-</div>
+      <!-- STEP 4 -->
+      <section id="step4" class="step">
+        <h2>Verification complete</h2>
+        <p>Your information has been matched successfully.</p>
 
-</div>
+        <div class="result-box">
+          <div><strong>Room Number:</strong> <span id="roomNumber"></span></div>
+          <div style="margin-top: 8px;"><strong>Door Password:</strong> <span id="doorPassword"></span></div>
+        </div>
 
-<script>
+        <button class="secondary" style="margin-top:16px;" onclick="resetAll()">Start over</button>
+      </section>
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyMVxYwhu6jFraFkivrFlw-yh0HNRfKidPIKGGnaiBEbIunJVXMTL1GUF_YXKr3RSSC/exec";
+      <!-- STEP 5 -->
+      <section id="step5" class="step">
+        <h2>Verification limit reached</h2>
+        <p>We could not verify your reservation after 10 attempts.</p>
 
-function goStep2(){
-  document.getElementById("step1").classList.add("hidden");
-  document.getElementById("step2").classList.remove("hidden");
-}
+        <div class="info-box">
+          <p>Please send us an email so we can help you manually.</p>
+          <a
+            id="emailHelpLink"
+            class="action-link"
+            href="mailto:your-email@naver.com?subject=Guest%20verification%20help%20needed&body=Hello%2C%0A%0AI%20could%20not%20complete%20the%20guest%20verification%20page.%20Please%20help%20me%20verify%20my%20reservation%20manually.%0A%0AThank%20you."
+          >
+            Send email
+          </a>
+          <p class="small" style="margin-top:10px;">You can later change this email address to your real support address.</p>
+        </div>
 
-async function startCheckin(){
-  document.getElementById("step2").classList.add("hidden");
-  document.getElementById("step3").classList.remove("hidden");
+        <button class="secondary" onclick="resetAll()">Try again later</button>
+      </section>
+    </div>
+  </div>
 
-  const res = await fetch(API_URL + "?action=getOptions");
-  const data = await res.json();
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbyMVxYwhu6jFraFkivrFlw-yh0HNRfKidPIKGGnaiBEbIunJVXMTL1GUF_YXKr3RSSC/exec";
 
-  fillSelect("name", data.names);
-  fillSelect("checkin", data.checkins);
-  fillSelect("checkout", data.checkouts);
-}
+    let attemptsLeft = 10;
+    let optionsLoaded = false;
 
-function fillSelect(id, arr){
-  const sel = document.getElementById(id);
-  sel.innerHTML = "";
-  arr.forEach(v=>{
-    const o = document.createElement("option");
-    o.value = v;
-    o.text = v;
-    sel.appendChild(o);
-  });
-}
+    function goToStep(stepNumber) {
+      document.querySelectorAll(".step").forEach(el => el.classList.remove("active"));
+      document.getElementById("step" + stepNumber).classList.add("active");
 
-async function verify(){
+      const backBtn = document.getElementById("backBtn");
+      if (stepNumber === 1 || stepNumber === 4 || stepNumber === 5) {
+        backBtn.classList.add("hidden");
+      } else {
+        backBtn.classList.remove("hidden");
+      }
 
-  const name = document.getElementById("name").value;
-  const checkin = document.getElementById("checkin").value;
-  const checkout = document.getElementById("checkout").value;
+      updateAttemptBadge();
+      hideError();
+      hideInfo();
+    }
 
-  const url =
-    API_URL +
-    "?action=verifyGuest" +
-    "&name=" + encodeURIComponent(name) +
-    "&checkin=" + encodeURIComponent(checkin) +
-    "&checkout=" + encodeURIComponent(checkout);
+    function goBack() {
+      if (document.getElementById("step3").classList.contains("active")) {
+        goToStep(2);
+        return;
+      }
+      if (document.getElementById("step2").classList.contains("active")) {
+        goToStep(1);
+      }
+    }
 
-  const res = await fetch(url);
-  const data = await res.json();
+    function updateAttemptBadge() {
+      document.getElementById("attemptBadge").textContent = "Attempts left: " + attemptsLeft;
+    }
 
-  if(!data.success){
-    alert("Wrong. Try again.");
-    return;
-  }
+    function showBookingInfo() {
+      document.getElementById("bookingInfo").classList.remove("hidden");
+    }
 
-  document.getElementById("step3").classList.add("hidden");
-  document.getElementById("result").classList.remove("hidden");
+    function showAlreadyStayingInfo() {
+      document.getElementById("alreadyStayingInfo").classList.remove("hidden");
+    }
 
-  document.getElementById("room").innerText = "Room: " + data.roomNumber;
-  document.getElementById("pw").innerText = "Password: " + data.doorPassword;
-}
+    function showError(message) {
+      const box = document.getElementById("errorBox");
+      box.textContent = message;
+      box.classList.remove("hidden");
+    }
 
-</script>
+    function hideError() {
+      const box = document.getElementById("errorBox");
+      box.textContent = "";
+      box.classList.add("hidden");
+    }
 
+    function showInfo(message) {
+      const box = document.getElementById("infoBox");
+      box.textContent = message;
+      box.classList.remove("hidden");
+    }
+
+    function hideInfo() {
+      const box = document.getElementById("infoBox");
+      box.textContent = "";
+      box.classList.add("hidden");
+    }
+
+    function setLoading(isLoading) {
+      const card = document.getElementById("card");
+      if (isLoading) {
+        card.classList.add("loading");
+      } else {
+        card.classList.remove("loading");
+      }
+    }
+
+    function fillSelect(selectId, items, placeholder) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = "";
+
+      const firstOption = document.createElement("option");
+      firstOption.value = "";
+      firstOption.textContent = placeholder;
+      select.appendChild(firstOption);
+
+      items.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item;
+        option.textContent = item;
+        select.appendChild(option);
+      });
+    }
+
+    async function startCheckInToday() {
+      goToStep(3);
+
+      if (optionsLoaded) return;
+
+      setLoading(true);
+      showInfo("Loading guest list...");
+
+      try {
+        const response = await fetch(API_URL + "?action=getOptions");
+        const data = await response.json();
+
+        if (!data.success) {
+          showError("Failed to load guest options.");
+          return;
+        }
+
+        fillSelect("nameSelect", data.names || [], "-- Select your name --");
+        fillSelect("checkinSelect", data.checkins || [], "-- Select check-in date --");
+        fillSelect("checkoutSelect", data.checkouts || [], "-- Select check-out date --");
+
+        optionsLoaded = true;
+        hideInfo();
+      } catch (error) {
+        showError("Could not connect to the server.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function verifyGuest() {
+      const name = document.getElementById("nameSelect").value;
+      const checkin = document.getElementById("checkinSelect").value;
+      const checkout = document.getElementById("checkoutSelect").value;
+
+      hideError();
+      hideInfo();
+
+      if (!name) {
+        showError("Please select your name.");
+        return;
+      }
+
+      if (!checkin) {
+        showError("Please select your check-in date.");
+        return;
+      }
+
+      if (!checkout) {
+        showError("Please select your check-out date.");
+        return;
+      }
+
+      setLoading(true);
+      showInfo("Verifying your information...");
+
+      try {
+        const url =
+          API_URL +
+          "?action=verifyGuest" +
+          "&name=" + encodeURIComponent(name) +
+          "&checkin=" + encodeURIComponent(checkin) +
+          "&checkout=" + encodeURIComponent(checkout);
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        hideInfo();
+
+        if (!data.success) {
+          attemptsLeft -= 1;
+          updateAttemptBadge();
+
+          if (attemptsLeft <= 0) {
+            goToStep(5);
+            return;
+          }
+
+          showError("The information does not match our records. Please try again.");
+          return;
+        }
+
+        document.getElementById("roomNumber").textContent = data.roomNumber || "";
+        document.getElementById("doorPassword").textContent = data.doorPassword || "";
+        goToStep(4);
+      } catch (error) {
+        hideInfo();
+        showError("Could not connect to the server.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function resetAll() {
+      attemptsLeft = 10;
+      optionsLoaded = false;
+
+      document.getElementById("bookingInfo").classList.add("hidden");
+      document.getElementById("alreadyStayingInfo").classList.add("hidden");
+
+      document.getElementById("nameSelect").innerHTML = '<option value="">-- Select your name --</option>';
+      document.getElementById("checkinSelect").innerHTML = '<option value="">-- Select check-in date --</option>';
+      document.getElementById("checkoutSelect").innerHTML = '<option value="">-- Select check-out date --</option>';
+
+      document.getElementById("roomNumber").textContent = "";
+      document.getElementById("doorPassword").textContent = "";
+
+      hideError();
+      hideInfo();
+      goToStep(1);
+    }
+
+    updateAttemptBadge();
+  </script>
 </body>
 </html>
