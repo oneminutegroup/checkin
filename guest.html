@@ -178,9 +178,8 @@
           <button onclick="showBookingInfo()">No, but I want to book.</button>
         </div>
         <div id="bookingInfo" class="info-box hidden">
-          <strong>Booking information</strong>
-          <p class="small">Please proceed to our booking page or contact us directly.</p>
-          <a class="action-link" href="https://your-booking-link.com" target="_blank" rel="noopener">Go to booking page</a>
+          <strong>Sorry, No room today :(</strong>
+          <p class="small">Please check again another day.</p>
         </div>
       </section>
 
@@ -209,6 +208,7 @@
         <div id="bookingIdInfoBox" class="info-box hidden"></div>
 
         <button class="primary" onclick="checkBookingId()">Check Booking ID</button>
+        <button class="secondary" onclick="startFallbackVerification()">I don't know the booking ID.</button>
       </section>
 
       <!-- STEP 4 -->
@@ -269,7 +269,7 @@
       <!-- STEP 7 -->
       <section id="step7" class="step">
         <h2>Verification limit reached</h2>
-        <p>We could not verify your reservation after 10 attempts.</p>
+        <p>Too many failed attempts on this device.</p>
 
         <div class="info-box">
           <p>Please send us an email so we can help you manually.</p>
@@ -280,20 +280,37 @@
           >
             Send email
           </a>
-          <p class="small" style="margin-top:10px;">You can later change this email address to your real support address.</p>
+          <p class="small" style="margin-top:10px;">This device is blocked until browser storage is manually cleared.</p>
         </div>
-
-        <button class="secondary" onclick="resetAll()">Try again later</button>
       </section>
     </div>
   </div>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyMVxYwhu6jFraFkivrFlw-yh0HNRfKidPIKGGnaiBEbIunJVXMTL1GUF_YXKr3RSSC/exec";
+    const ATTEMPTS_KEY = "guest_verification_attempts_left";
+    const LOCKED_KEY = "guest_verification_locked";
 
-    let attemptsLeft = 10;
+    let attemptsLeft = parseInt(localStorage.getItem(ATTEMPTS_KEY) || "10", 10);
     let optionsLoaded = false;
     let currentBookingId = "";
+
+    function saveAttempts() {
+      localStorage.setItem(ATTEMPTS_KEY, String(attemptsLeft));
+    }
+
+    function setLocked() {
+      localStorage.setItem(LOCKED_KEY, "1");
+    }
+
+    function isLocked() {
+      return localStorage.getItem(LOCKED_KEY) === "1";
+    }
+
+    function clearLockState() {
+      localStorage.removeItem(LOCKED_KEY);
+      localStorage.removeItem(ATTEMPTS_KEY);
+    }
 
     function goToStep(stepNumber) {
       document.querySelectorAll(".step").forEach(el => el.classList.remove("active"));
@@ -311,6 +328,11 @@
     }
 
     function goBack() {
+      if (isLocked()) {
+        goToStep(7);
+        return;
+      }
+
       if (document.getElementById("step5").classList.contains("active")) {
         goToStep(2);
         return;
@@ -329,7 +351,8 @@
     }
 
     function updateAttemptBadge() {
-      document.getElementById("attemptBadge").textContent = "Attempts left: " + attemptsLeft;
+      const safeAttempts = Math.max(0, attemptsLeft);
+      document.getElementById("attemptBadge").textContent = "Attempts left: " + safeAttempts;
     }
 
     function showBookingInfo() {
@@ -389,9 +412,13 @@
 
     function decreaseAttemptOrLock() {
       attemptsLeft -= 1;
+      saveAttempts();
       updateAttemptBadge();
 
       if (attemptsLeft <= 0) {
+        attemptsLeft = 0;
+        saveAttempts();
+        setLocked();
         goToStep(7);
         return true;
       }
@@ -399,6 +426,11 @@
     }
 
     function startCheckInToday() {
+      if (isLocked()) {
+        goToStep(7);
+        return;
+      }
+
       document.getElementById("bookingIdInput").value = "";
       document.getElementById("bookingNameSelect").innerHTML = '<option value="">-- Select your name --</option>';
       currentBookingId = "";
@@ -406,6 +438,11 @@
     }
 
     async function checkBookingId() {
+      if (isLocked()) {
+        goToStep(7);
+        return;
+      }
+
       const bookingId = document.getElementById("bookingIdInput").value.trim();
 
       hideAllMessages();
@@ -448,6 +485,11 @@
     }
 
     async function verifyBookingName() {
+      if (isLocked()) {
+        goToStep(7);
+        return;
+      }
+
       const name = document.getElementById("bookingNameSelect").value;
 
       hideAllMessages();
@@ -492,6 +534,11 @@
     }
 
     async function startFallbackVerification() {
+      if (isLocked()) {
+        goToStep(7);
+        return;
+      }
+
       goToStep(5);
 
       if (optionsLoaded) return;
@@ -524,6 +571,11 @@
     }
 
     async function verifyGuest() {
+      if (isLocked()) {
+        goToStep(7);
+        return;
+      }
+
       const name = document.getElementById("nameSelect").value;
       const checkin = document.getElementById("checkinSelect").value;
       const checkout = document.getElementById("checkoutSelect").value;
@@ -579,7 +631,9 @@
     }
 
     function resetAll() {
+      clearLockState();
       attemptsLeft = 10;
+      saveAttempts();
       optionsLoaded = false;
       currentBookingId = "";
 
@@ -599,7 +653,29 @@
       goToStep(1);
     }
 
-    updateAttemptBadge();
+    function initializeAttemptState() {
+      if (localStorage.getItem(ATTEMPTS_KEY) === null) {
+        attemptsLeft = 10;
+        saveAttempts();
+      } else {
+        attemptsLeft = parseInt(localStorage.getItem(ATTEMPTS_KEY) || "10", 10);
+        if (Number.isNaN(attemptsLeft)) {
+          attemptsLeft = 10;
+          saveAttempts();
+        }
+      }
+
+      updateAttemptBadge();
+
+      if (isLocked() || attemptsLeft <= 0) {
+        attemptsLeft = 0;
+        saveAttempts();
+        setLocked();
+        goToStep(7);
+      }
+    }
+
+    initializeAttemptState();
   </script>
 </body>
 </html>
