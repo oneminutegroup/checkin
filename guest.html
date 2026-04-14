@@ -80,9 +80,6 @@
       text-align: center;
       border-color: #222;
     }
-    button.secondary {
-      text-align: center;
-    }
     button.linkish {
       border: none;
       background: none;
@@ -155,6 +152,9 @@
       opacity: 0.65;
       pointer-events: none;
     }
+    .spacer-top {
+      margin-top: 18px;
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -208,7 +208,7 @@
         <div id="bookingIdInfoBox" class="info-box hidden"></div>
 
         <button class="primary" onclick="checkBookingId()">Check Booking ID</button>
-        <button class="secondary" onclick="startFallbackVerification()">I don't know the booking ID.</button>
+        <button class="primary spacer-top" onclick="startFallbackVerification()">I don't know the booking ID.</button>
       </section>
 
       <!-- STEP 4 -->
@@ -259,11 +259,10 @@
         <p>Your information has been matched successfully.</p>
 
         <div class="result-box">
-          <div><strong>Room Number:</strong> <span id="roomNumber"></span></div>
-          <div style="margin-top: 8px;"><strong>Door Password:</strong> <span id="doorPassword"></span></div>
+          <div><strong>Front door:</strong> <span id="frontDoor"></span></div>
+          <div style="margin-top: 8px;"><strong>Room number:</strong> <span id="roomNumber"></span></div>
+          <div style="margin-top: 8px;"><strong>Room password:</strong> <span id="doorPassword"></span></div>
         </div>
-
-        <button class="secondary" style="margin-top:16px;" onclick="resetAll()">Start over</button>
       </section>
 
       <!-- STEP 7 -->
@@ -305,11 +304,6 @@
 
     function isLocked() {
       return localStorage.getItem(LOCKED_KEY) === "1";
-    }
-
-    function clearLockState() {
-      localStorage.removeItem(LOCKED_KEY);
-      localStorage.removeItem(ATTEMPTS_KEY);
     }
 
     function goToStep(stepNumber) {
@@ -522,6 +516,7 @@
           return;
         }
 
+        document.getElementById("frontDoor").textContent = data.frontDoor || "";
         document.getElementById("roomNumber").textContent = data.roomNumber || "";
         document.getElementById("doorPassword").textContent = data.doorPassword || "";
         goToStep(6);
@@ -619,6 +614,7 @@
           return;
         }
 
+        document.getElementById("frontDoor").textContent = data.frontDoor || "";
         document.getElementById("roomNumber").textContent = data.roomNumber || "";
         document.getElementById("doorPassword").textContent = data.doorPassword || "";
         goToStep(6);
@@ -628,29 +624,6 @@
       } finally {
         setLoading(false);
       }
-    }
-
-    function resetAll() {
-      clearLockState();
-      attemptsLeft = 10;
-      saveAttempts();
-      optionsLoaded = false;
-      currentBookingId = "";
-
-      document.getElementById("bookingInfo").classList.add("hidden");
-      document.getElementById("alreadyStayingInfo").classList.add("hidden");
-
-      document.getElementById("bookingIdInput").value = "";
-      document.getElementById("bookingNameSelect").innerHTML = '<option value="">-- Select your name --</option>';
-      document.getElementById("nameSelect").innerHTML = '<option value="">-- Select your name --</option>';
-      document.getElementById("checkinSelect").innerHTML = '<option value="">-- Select check-in date --</option>';
-      document.getElementById("checkoutSelect").innerHTML = '<option value="">-- Select check-out date --</option>';
-
-      document.getElementById("roomNumber").textContent = "";
-      document.getElementById("doorPassword").textContent = "";
-
-      hideAllMessages();
-      goToStep(1);
     }
 
     function initializeAttemptState() {
